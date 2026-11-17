@@ -193,7 +193,36 @@ test("application answer survives creating and attaching a project", async ({ pa
   await page
     .getByRole("textbox", { name: "Dlaczego pasujesz do tej roli?", exact: true })
     .fill(answer);
-  await page.getByRole("button", { name: "Dodaj nowy projekt", exact: true }).click();
+  const addProject = page.getByRole("button", { name: "Dodaj nowy projekt", exact: true });
+  for (const width of [1280, 851, 850, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.mouse.move(0, 0);
+    await expect(addProject).toHaveCSS("background-color", "rgb(255, 144, 232)");
+    await expect(addProject).toHaveCSS("color", "rgb(24, 24, 24)");
+    await expect(addProject).toHaveCSS("font-size", "14px");
+    await expect(addProject).toHaveCSS("font-weight", "600");
+    await expect(addProject).toHaveCSS("line-height", "21px");
+    await expect(addProject).toHaveCSS("letter-spacing", "normal");
+    await expect(addProject).toHaveCSS("border-radius", "18px");
+    const bounds = await addProject.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+    if ([1280, 390, 320].includes(width))
+      await page.locator(".application-form").screenshot({
+        path: `artifacts/project-create-action/application-${width}.png`,
+      });
+  }
+  await addProject.hover();
+  await expect(addProject).toHaveCSS("background-color", "rgb(255, 172, 239)");
+  await page.mouse.move(0, 0);
+  await addProject.focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  await expect(addProject).toBeFocused();
+  await expect(addProject).toHaveCSS("outline-style", "solid");
+  await expect(addProject).toHaveCSS("outline-width", "3px");
+  await page.keyboard.press("Enter");
   await fill(page);
   await page.getByRole("button", { name: "Sprawdź opis z AI", exact: true }).click();
   await page.getByRole("button", { name: "Potwierdź i zapisz kartę", exact: true }).click();
@@ -204,6 +233,7 @@ test("application answer survives creating and attaching a project", async ({ pa
   await expect(
     page.getByRole("checkbox", { name: /^Dołącz kartę: Asystent obsługi zgłoszeń/ }),
   ).toBeChecked();
+  await expect(addProject).toHaveCSS("background-color", "rgb(255, 144, 232)");
 });
 
 test("profile surfaces align and a saved draft leads to recruitment attachment", async ({

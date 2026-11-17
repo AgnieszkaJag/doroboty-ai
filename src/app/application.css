@@ -213,7 +213,8 @@
   flex-wrap: wrap;
   gap: 12px;
 }
-.application-actions [data-slot="button"] {
+.application-actions [data-slot="button"],
+.application-project-create {
   font-size: 14px;
   line-height: 1.5;
   letter-spacing: normal;

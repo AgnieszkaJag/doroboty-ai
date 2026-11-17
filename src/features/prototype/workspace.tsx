@@ -484,7 +484,8 @@ export function ApplyPage() {
             )}
             <div>
               <Button
-                variant="outline"
+                variant="default"
+                className="application-project-create"
                 disabled={submitted}
                 type="button"
                 onClick={() => {
