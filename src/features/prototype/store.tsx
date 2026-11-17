@@ -1,6 +1,13 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { initialState, transition, type Action, type State } from "./model";
-import { parseState, readState, saveState, type StoragePort } from "./storage";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
+import { STORAGE_KEY, type StoragePort } from "./storage";
+import { createScenarioStore } from "./scenario-store";
 function browserStorage(): StoragePort | null {
   try {
     return window.localStorage;
@@ -9,61 +16,32 @@ function browserStorage(): StoragePort | null {
   }
 }
 function useStore() {
-  const [loaded] = useState(() => readState(browserStorage()));
-  const [state, setState] = useState(loaded.state);
-  const [issue, setIssue] = useState(loaded.issue);
-  const [error, setError] = useState("");
-  const [blocked, setBlocked] = useState(loaded.blocked);
-  const latest = useRef(state);
-  function commit(next: State, replace = false) {
-    latest.current = next;
-    setState(next);
-    setError("");
-    if (blocked && !replace) return;
-    try {
-      saveState(browserStorage(), next);
-      setIssue("");
-      if (replace) setBlocked(false);
-    } catch (e) {
-      setIssue((e as Error).message);
-    }
-  }
-  function run(action: Action) {
-    try {
-      commit(transition(latest.current, action));
-      return true;
-    } catch (e) {
-      setError(
-        e instanceof Error && e.name !== "ZodError"
-          ? e.message
-          : "Sprawdź poprawność i długość wprowadzonych danych.",
-      );
-      return false;
-    }
-  }
-  function importState(raw: string) {
-    try {
-      const next = parseState(raw);
-      commit(next, true);
-      return true;
-    } catch (e) {
-      setError((e as Error).message);
-      return false;
-    }
-  }
+  const [controller] = useState(() => createScenarioStore(browserStorage));
+  const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
   useEffect(() => {
     document.documentElement.classList.remove("dark");
-  }, []);
+    const onStorage = (event: StorageEvent) => {
+      if (
+        event.storageArea === browserStorage() &&
+        (event.key === STORAGE_KEY || event.key === null)
+      )
+        controller.sync();
+    };
+    const onFocus = () => controller.sync();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", onFocus);
+    controller.sync();
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [controller]);
   return {
-    state,
-    issue,
-    error,
-    blocked,
-    original: loaded.original,
-    run,
-    importState,
-    clearError: () => setError(""),
-    reset: () => commit(initialState(), true),
+    ...snapshot,
+    run: controller.run,
+    importState: controller.importState,
+    clearError: controller.clearError,
+    reset: controller.reset,
   };
 }
 type Store = ReturnType<typeof useStore>;

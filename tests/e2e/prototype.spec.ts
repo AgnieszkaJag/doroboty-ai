@@ -74,7 +74,11 @@ for (const [name, filename] of [
     await choose(page, "Karolina Wiśniewska");
     await page.goto(`/#/app/kandydaci/${id}`);
     await page.reload();
-    await expect(downloadLink).toHaveCount(0);
+    await expect(downloadLink).toHaveAttribute("href", href!);
+    await expect(page.getByRole("tab", { name: "Profil", exact: true })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     await page.getByRole("tab", { name: "CV", exact: true }).click();
     await expect(downloadLink).toHaveAttribute("href", href!);
     await page.screenshot({ path: `artifacts/${filename}-employer-desktop.png`, fullPage: true });
@@ -125,7 +129,9 @@ test("published job → saved offer/draft → submitted application → employer
   await expect(page.getByRole("button", { name: "Użyj propozycji" })).toHaveCount(0);
   await answer.fill(draftAnswer);
   await page.getByRole("button", { name: "Zapisz szkic" }).click();
-  await expect(page.getByRole("status")).toHaveText("Szkic został zapisany.");
+  await expect(
+    page.getByRole("status").filter({ hasText: /^Szkic został zapisany\.$/ }),
+  ).toHaveText("Szkic został zapisany.");
   expect(
     await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).drafts.at(-1), STORAGE_KEY),
   ).toMatchObject({ notes: "", generated: "", answer: draftAnswer });
@@ -250,6 +256,39 @@ test("storage denial keeps the app usable and offers export", async ({ page }) =
   await expect(page.getByRole("status")).toContainText("Wyeksportuj");
   await page.goto("/#/app/profil");
   await expect(page.getByLabel("Imię i nazwisko")).toHaveValue("Anna Kowalska");
+});
+test("open recruiter tabs refresh shared criteria without losing an unsaved note", async ({
+  page,
+  context,
+}) => {
+  await choose(page, "Karolina Wiśniewska");
+  await page.goto("/#/app/kandydaci?oferta=20000000-0000-4000-8000-000000000001");
+  await page.locator(".recruiter-rubric > summary").click();
+  await page.getByRole("button", { name: "Potwierdź kryteria i przelicz" }).click();
+  const detail = await context.newPage();
+  await detail.goto(
+    "/#/app/kandydaci/application-example?oferta=20000000-0000-4000-8000-000000000001&sekcja=analysis",
+  );
+  await expect(detail.locator(".recruiter-assessment")).toContainText("kryteria w wersji 1");
+  const note = detail.getByLabel("Notatka rekrutacyjna (widoczna pracodawcy)");
+  await note.fill("Keep this local note when the shared rubric changes.");
+  await page.locator(".recruiter-rubric > summary").click();
+  await page
+    .getByLabel("Kryterium 1", { exact: true })
+    .fill("Prowadzenie discovery i wywiadów z użytkownikami oraz pomiar czasu obsługi.");
+  await page.getByRole("button", { name: "Potwierdź kryteria i przelicz" }).click();
+  await expect(detail.locator(".recruiter-assessment")).toContainText("kryteria w wersji 2");
+  await expect(note).toHaveValue("Keep this local note when the shared rubric changes.");
+  await detail.getByRole("button", { name: "W przeglądzie", exact: true }).click();
+  await expect(page.getByRole("article").filter({ hasText: "Marek Nowak" })).toContainText(
+    "W przeglądzie",
+  );
+  await detail.reload();
+  await expect(detail.locator(".recruiter-assessment")).toContainText("kryteria w wersji 2");
+  await expect(
+    detail.getByText("Keep this local note when the shared rubric changes."),
+  ).toBeVisible();
+  await detail.close();
 });
 test("map, hash deep links and unknown records work without external requests", async ({
   page,
@@ -401,7 +440,9 @@ for (const width of [1440, 375]) {
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("status")).toHaveText("Szkic został zapisany.");
+    await expect(
+      page.getByRole("status").filter({ hasText: /^Szkic został zapisany\.$/ }),
+    ).toHaveText("Szkic został zapisany.");
     expect(
       await page.evaluate(
         (key) => JSON.parse(localStorage.getItem(key)!).drafts.at(-1),
@@ -684,18 +725,62 @@ test("homepage surfaces and marketplace action type roles match the shared refer
   }
 });
 
+test("recruiter role list confirms shared criteria, opens profile/analysis and retains role context", async ({
+  page,
+}) => {
+  const job = initialState().jobs[0];
+  await choose(page, "Karolina Wiśniewska");
+  await page.getByRole("link", { name: "Kandydaci (1)", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`oferta=${job.id}`));
+  await expect(page.locator(".recruiter-candidate-row")).toHaveCount(1);
+  await expect(page.locator(".recruiter-candidate-row")).toContainText("Brak karty");
+  await page.locator(".recruiter-rubric > summary").click();
+  await page.getByRole("button", { name: "Potwierdź kryteria i przelicz", exact: true }).click();
+  await expect(page.locator(".recruiter-rubric > summary")).toContainText("wersja 1");
+  await expect(page.locator(".recruiter-coverage strong")).toHaveCount(1);
+  await page.getByLabel("Szukaj kandydata lub oferty").fill("Marek");
+  await page.getByRole("link", { name: "Profil kandydata: Marek Nowak", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "Profil", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  const note = page.getByLabel("Notatka rekrutacyjna (widoczna pracodawcy)");
+  await note.fill("Sprawdzić podstawę rezultatu.");
+  await page.getByRole("tab", { name: "Analiza", exact: true }).click();
+  await expect(page).toHaveURL(/sekcja=analysis/);
+  await expect(page.getByRole("tabpanel", { name: "Analiza", exact: true })).toContainText(
+    "kryteria w wersji 1",
+  );
+  await expect(note).toHaveValue("Sprawdzić podstawę rezultatu.");
+  await page.reload();
+  await expect(page.getByRole("tab", { name: "Analiza", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await page
+    .getByRole("navigation", { name: "Ścieżka nawigacji" })
+    .getByRole("link", { name: "Kandydaci", exact: true })
+    .click();
+  await expect(page).toHaveURL(/q=Marek/);
+  await expect(page.getByLabel("Szukaj kandydata lub oferty")).toHaveValue("Marek");
+  const foreign = initialState().jobs.find((item) => item.companyId !== job.companyId)!;
+  await page.goto(`/#/app/kandydaci?oferta=${foreign.id}`);
+  await expect(
+    page.getByRole("heading", { name: "Ta oferta nie jest dostępna", exact: true }),
+  ).toBeVisible();
+});
+
 test("process sheet keeps notes across keyboard tabs and saves stage history with focus", async ({
   page,
 }) => {
   await choose(page, "Karolina Wiśniewska");
   await page.goto("/#/app/kandydaci/application-example");
   const note = page.getByLabel("Notatka rekrutacyjna (widoczna pracodawcy)");
-  await expect(
-    page.locator(".record-meta").getByText("Match Score: 72%", { exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".record-meta")).toContainText("Oceny: brak zatwierdzonych kryteriów");
+  await expect(page.locator(".record-meta")).not.toContainText("Match Score");
   await expect(page.getByText("Wynik przykładowy", { exact: true })).toHaveCount(0);
   await expect(page.locator("iframe[title='Podgląd CV (PDF)']")).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Pobierz CV (PDF)", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Pobierz CV (PDF)", exact: true })).toHaveCount(1);
   const text = "Dopytać o decyzje dotyczące automatyzacji obsługi.";
   await note.fill(text);
   const answer = page.getByRole("tab", { name: "Odpowiedź", exact: true });
@@ -718,7 +803,8 @@ test("process sheet keeps notes across keyboard tabs and saves stage history wit
     /^\.?\/cv\/marek-nowak-cv-v1\.pdf$/,
   );
   await page.keyboard.press("Home");
-  await expect(answer).toBeFocused();
+  await expect(page.getByRole("tab", { name: "Profil", exact: true })).toBeFocused();
+  await answer.click();
   await expect(page.getByRole("tabpanel", { name: "Odpowiedź", exact: true })).toContainText(
     "Przesłana aplikacja",
   );
@@ -764,7 +850,7 @@ test("process sheet renders custom snapshots and long content on narrow screens"
   await page.reload();
   await choose(page, "Karolina Wiśniewska");
   await page.goto("/#/app/kandydaci/application-example");
-  await expect(page.getByText("Zapisana treść CV", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Zapisana treść CV", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Pobierz CV (PDF)", exact: true })).toHaveCount(0);
   await page.getByRole("tab", { name: "CV", exact: true }).click();
   await expect(page.getByText("Zapisana treść CV", { exact: true })).toBeVisible();

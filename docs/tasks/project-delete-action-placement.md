@@ -1,0 +1,5 @@
+# Project delete action placement
+
+Move the project-page delete control from the header to the bottom action row, next to Save draft. Preview/confirmed cards retain Delete beside Edit. Reuse the existing inline action group and mobile stacking; preserve confirmation, recovery and domain behavior. `FEATURES.md` was reviewed and needs no behavior update for this layout-only change.
+
+Verification: formatting, design-system integrity, lint, types, 41 unit tests, baseline packet and production build passed through `./scripts/verify`. Browser journeys remain blocked at launch by the missing provisioned Chromium executable. Manual inspection at 320/390/1280px found no overflow; Save and Delete share the desktop row and stack in order on phones, with 49px targets. Header deletion is absent. Separate read-only review found no issues. Evidence: `artifacts/project-removal/delete-next-to-draft.jpg`. No new tests were added for this reversible arrangement of existing controls; current reference styles and shared controls are reused.

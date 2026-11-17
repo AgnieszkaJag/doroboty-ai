@@ -1,4 +1,96 @@
 /* Host reading-sheet and timeline recipes; the v1 reference kit stays immutable. */
+.recruiter-project-report,
+.recruiter-expectation,
+.recruiter-project-source {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.recruiter-report-context {
+  font-weight: 600;
+}
+.recruiter-project-summary {
+  margin-block: 24px;
+}
+.recruiter-project-summary > div {
+  padding-block: 14px;
+  border-top: 1px solid var(--pp-line, #d8d5d1);
+}
+.recruiter-project-summary dt {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.recruiter-project-summary dd,
+.recruiter-expectation blockquote {
+  font-size: 16px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  margin: 0;
+}
+.recruiter-expectations,
+.recruiter-interview,
+.recruiter-project-source {
+  margin-top: 30px;
+}
+.recruiter-expectation {
+  border-bottom: 1px solid var(--pp-line, #d8d5d1);
+}
+.recruiter-expectation > summary,
+.recruiter-project-source > summary {
+  min-height: 44px;
+  padding-block: 16px;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.recruiter-expectation > summary > span:first-child {
+  font-weight: 600;
+}
+.recruiter-expectation .project-badge {
+  display: table;
+  margin-top: 8px;
+}
+.recruiter-expectation [data-evidence="personal"] {
+  background: var(--pp-fact, #ffe0f7);
+  border-color: var(--gui-text);
+}
+.recruiter-expectation figure {
+  margin: 16px 0 22px;
+  border-left: 3px solid var(--pp-action, #ff90e8);
+  padding-left: 16px;
+}
+.recruiter-expectation figcaption {
+  color: var(--gui-text-muted);
+  font-size: 13px;
+  margin-top: 8px;
+}
+.recruiter-interview ol {
+  list-style: decimal;
+  padding-left: 22px;
+}
+.recruiter-interview ul {
+  list-style: disc;
+  padding-left: 22px;
+}
+.recruiter-interview li {
+  font-size: 16px;
+  line-height: 1.75;
+  padding-left: 4px;
+  margin-bottom: 12px;
+}
+.recruiter-project-source {
+  border-top: 1px solid var(--gui-text);
+}
+.recruiter-project-source > summary {
+  font-weight: 600;
+}
+.recruiter-expectation > summary,
+.recruiter-project-source > summary {
+  cursor: pointer;
+}
+.recruiter-expectation > summary:hover,
+.recruiter-project-source > summary:hover {
+  background: var(--pp-fact, #ffe0f7);
+}
 .record-sheet {
   min-width: 0;
   padding: 24px 28px;

@@ -1,0 +1,586 @@
+/* Project-specific composition; shared Base UI controls retain their visual owners. */
+.project-page {
+  max-width: 980px;
+  margin-inline: auto;
+}
+.project-page-header {
+  margin: 28px 0;
+}
+.project-page-header h1 {
+  font-size: 48px;
+  line-height: 1.12;
+  outline: none;
+}
+.project-page-header > p {
+  max-width: 650px;
+  margin-top: 14px;
+  color: var(--gui-text-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.project-sheet {
+  container-type: inline-size;
+  background: #fff;
+  border: 1px solid var(--foreground);
+  border-radius: 24px;
+  padding: 30px;
+  min-width: 0;
+}
+.project-sheet-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 25px;
+  font-size: 12px;
+}
+.project-sheet-meta > span:first-child {
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gui-text-muted);
+}
+.project-badge {
+  display: inline-block;
+  border: 1px solid var(--pp-line, #d7d5cf);
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.project-question + .project-question {
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+  margin-top: 28px;
+  padding-top: 26px;
+}
+.project-question-title {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.project-question-title > span {
+  font-size: 12px;
+  color: var(--gui-text-muted);
+  flex-shrink: 0;
+}
+.project-question-title h2 {
+  font-size: 29px;
+  line-height: 1.22;
+}
+.project-field {
+  min-width: 0;
+}
+.project-field + .project-field {
+  margin-top: 20px;
+}
+.project-field > label,
+.project-followup > label:first-child,
+.project-use-options > label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.6;
+  margin-bottom: 7px;
+}
+.project-help {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--gui-text-muted);
+}
+.project-field .project-help {
+  margin-bottom: 12px;
+}
+.project-sheet input,
+.project-sheet textarea {
+  font-size: 16px;
+  line-height: 1.65;
+  letter-spacing: normal;
+}
+.project-sheet textarea {
+  field-sizing: content;
+  min-height: 145px;
+  resize: vertical;
+  overflow-wrap: anywhere;
+}
+.project-field-personal textarea {
+  border-color: var(--foreground);
+}
+.project-contributions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+.project-contributions .project-field {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.project-contributions .project-field > textarea {
+  flex: 1;
+}
+@container (min-width: 640px) {
+  .project-contributions {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+.project-actions,
+.project-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.project-actions {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+  justify-content: space-between;
+}
+.project-actions > .project-inline-actions {
+  margin-top: 0;
+}
+.project-actions [data-slot="button"],
+.project-actions > a,
+.project-inline-actions > *,
+.project-use > a,
+.project-use > button,
+.project-use-options > a,
+.project-use-options > button {
+  min-height: 44px;
+  max-width: 100%;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: normal;
+  text-align: center;
+}
+.project-ai-note,
+.project-sharing-note {
+  color: var(--gui-text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  margin-top: 20px;
+}
+.project-save-status {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--gui-text-muted);
+  margin-top: 18px;
+}
+.project-eyebrow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--gui-text-muted);
+}
+.project-eyebrow svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+.project-followup {
+  margin-top: 25px;
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+  padding-top: 24px;
+}
+.project-skip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.project-skip [role="checkbox"] {
+  flex-shrink: 0;
+}
+.project-field-error {
+  color: var(--gui-error);
+  font-size: 14px;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.project-reading {
+  padding-top: 22px;
+  margin-top: 22px;
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+}
+.project-preview h2 {
+  font-size: 34px;
+}
+.project-reading h3 {
+  font-size: 25px;
+  margin-bottom: 12px;
+}
+.project-reading p {
+  white-space: pre-wrap;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.project-followup-answer + .project-followup-answer {
+  margin-top: 20px;
+}
+.project-followup-answer h4 {
+  font:
+    600 15px/1.6 Arial,
+    Helvetica,
+    sans-serif;
+  margin-bottom: 8px;
+}
+.project-analysis {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+}
+.project-analysis > h3 {
+  font-size: 27px;
+  margin-bottom: 12px;
+}
+.project-analysis > .project-help {
+  margin-bottom: 18px;
+}
+.project-check {
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+}
+.project-check summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  min-height: 52px;
+  padding: 12px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+.project-check summary::after {
+  content: "+";
+  flex-shrink: 0;
+}
+.project-check[open] summary::after {
+  content: "−";
+}
+.project-check summary:hover {
+  background: var(--gui-color-1-transparent);
+}
+.project-check summary:focus-visible {
+  outline: 2px solid var(--gui-focus);
+  outline-offset: 3px;
+}
+.project-check-status {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--gui-text-muted);
+  text-align: right;
+}
+.project-check > p {
+  font-size: 14px;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.project-check blockquote {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  background: #f4f4f0;
+  border-left: 2px solid var(--foreground);
+  font-size: 14px;
+}
+.project-check blockquote p {
+  white-space: pre-wrap;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  max-height: none;
+}
+.project-success {
+  background: #ffe0f7;
+  border: 1px solid var(--foreground);
+  border-radius: 18px;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  line-height: 1.6;
+}
+.project-success svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.project-profile-section {
+  margin-top: 28px;
+  background: #fff;
+  border: 1px solid var(--foreground);
+  border-radius: 24px;
+  padding: 28px;
+}
+/* Requested stronger emphasis for project attachment, scoped to this flow. */
+.project-attach-action:not(:disabled, [aria-disabled="true"], [data-disabled]) {
+  background-color: #e34db8;
+  color: var(--foreground);
+  --control-hover-bg: #ee7ad0;
+}
+.project-attach-action:not(:disabled, [aria-disabled="true"], [data-disabled]):hover {
+  background-color: var(--control-hover-bg);
+}
+.project-draft-next {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+}
+.project-draft-next h2 {
+  font-size: 27px;
+  margin-bottom: 12px;
+}
+.project-draft-next .project-use {
+  border-top: 0;
+  padding-top: 16px;
+  margin-top: 0;
+}
+.project-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.project-section-header h2 {
+  margin-bottom: 12px;
+}
+.project-list-item > p {
+  font-size: 14px;
+  color: var(--gui-text-muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.project-list-item {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+}
+.project-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.project-list-heading h3 {
+  font-size: 26px;
+}
+.project-inline-actions {
+  margin-top: 18px;
+}
+.project-use {
+  display: grid;
+  gap: 14px;
+  padding-top: 22px;
+  margin-top: 22px;
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+}
+.project-use > a,
+.project-use > button,
+.project-use-options > a,
+.project-use-options > button {
+  justify-self: start;
+}
+.project-use-options {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.project-use-options[hidden] {
+  display: none;
+}
+.project-use-options > label {
+  font-size: 18px;
+}
+.project-use-prominent {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  margin: 0 0 24px;
+  padding: 24px;
+  background: #ffe0f7;
+  border: 1px solid var(--foreground);
+  border-radius: 24px;
+}
+.project-use-prominent h2 {
+  font-size: 27px;
+  line-height: 1.25;
+  margin-bottom: 10px;
+}
+.project-use-prominent .project-use-options {
+  grid-column: 1 / -1;
+  padding-top: 20px;
+  border-top: 1px solid var(--foreground);
+}
+.project-application-drafts {
+  margin-block: 20px;
+}
+.project-application-drafts h4 {
+  font-size: 21px;
+  margin-bottom: 8px;
+}
+.project-application-draft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-block: 16px;
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+}
+.project-trash {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+}
+.project-trash > summary {
+  min-height: 44px;
+  padding-block: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.project-trash > summary:hover {
+  background: var(--gui-color-1-transparent);
+}
+.project-trash > summary:focus-visible {
+  outline: 2px solid var(--gui-focus);
+  outline-offset: 3px;
+}
+.project-trash-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-block: 16px;
+}
+.project-trash-item + .project-trash-item {
+  border-top: 1px solid var(--pp-line, #d7d5cf);
+}
+.project-trash-item > strong {
+  min-width: 0;
+  flex: 1 1 180px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.project-trash-item button,
+.project-attachment-section > button {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  font-size: 14px;
+}
+.project-application-draft > strong {
+  flex: 1 1 180px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.project-application-draft button {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  font-size: 14px;
+}
+.project-attachment-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-block: 14px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.project-attachment-option [role="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.project-attachment-option strong {
+  display: block;
+}
+.project-attachment-option > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.project-attachment-section > .project-help {
+  margin-block: 12px;
+}
+.project-attachment-section > a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: underline;
+  font-size: 14px;
+}
+.project-attachment-section .project-help {
+  margin-bottom: 12px;
+}
+@media (max-width: 600px) {
+  .project-page-header h1 {
+    font-size: 36px;
+  }
+  .project-page-header {
+    margin-block: 22px;
+  }
+  .project-sheet {
+    padding: 22px 18px;
+    border-radius: 20px;
+  }
+  .project-question-title {
+    gap: 10px;
+  }
+  .project-question-title h2 {
+    font-size: 25px;
+  }
+  .project-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .project-actions > *,
+  .project-inline-actions > *,
+  .project-section-header > button,
+  .project-use > a,
+  .project-use > button,
+  .project-use-options > a,
+  .project-use-options > button,
+  .project-application-draft button {
+    width: 100%;
+  }
+  .project-trash-item button,
+  .project-attachment-section > button {
+    width: 100%;
+  }
+  .project-actions > :last-child {
+    order: -1;
+  }
+  .project-profile-section {
+    padding: 22px 18px;
+  }
+  .project-use-prominent {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 22px 18px;
+  }
+  .project-inline-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .project-preview h2 {
+    font-size: 30px;
+  }
+  .project-check summary {
+    gap: 8px;
+  }
+  .project-check-status {
+    max-width: 115px;
+  }
+}
+
+/* Submitted records can contain three material tabs on a narrow phone. */
+.recruiting-record .record-tabs {
+  flex-wrap: wrap;
+}

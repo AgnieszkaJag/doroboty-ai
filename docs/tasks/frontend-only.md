@@ -62,3 +62,5 @@ Separate source/diff review compared the restored public compositions against cf
 ## Integration request
 
 The user requested committing all current repository changes and merging into main. Pre-integration review found origin/main f062060 differs from the migration base only by changing the retired Next.js section heading from H1 to H2 in AGENTS.md. Resolve that against the authorized frontend-only agent instructions, rerun ./scripts/verify after integration, and publish through the task branch. The final UI/data/register changes were separately reviewed and all current working-tree changes are included.
+
+Cross-tab persistence behavior was later extended by [scenario tab synchronization](scenario-tab-synchronization.md). The original no-cross-tab statement above records that earlier milestone; current same-origin tabs synchronize while cross-device storage remains unsupported.

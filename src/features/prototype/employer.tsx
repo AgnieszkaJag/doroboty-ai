@@ -49,12 +49,21 @@ export function EmployerJobs() {
                     {job.publicationStatus === "published" ? "Opublikowana" : "Szkic"}
                   </p>
                 </div>
-                <Link
-                  to={`/oferty/${job.slug}`}
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
-                >
-                  Zobacz ofertę
-                </Link>
+                <div className="recruiter-job-actions">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={<Link to={`/app/kandydaci?oferta=${encodeURIComponent(job.id)}`} />}
+                  >
+                    Kandydaci ({state.applications.filter((item) => item.jobId === job.id).length})
+                  </Button>
+                  <Link
+                    to={`/oferty/${job.slug}`}
+                    className={buttonVariants({ variant: "outline", size: "sm" })}
+                  >
+                    Zobacz ofertę
+                  </Link>
+                </div>
               </div>
             </article>
           ))

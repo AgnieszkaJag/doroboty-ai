@@ -6,7 +6,7 @@ One React/TypeScript application is built by Vite into static files. HashRouter 
 
 JSON marketplace/person fixtures → initialState → PrototypeProvider → feature views. Local operations go through transition with shared Zod schemas and explicit role/ownership/transition checks for coherent simulation. All roles still have access to the same browser data; these checks are not security.
 
-Candidate source notes, generated draft and approved application are distinct fields. Submission snapshots CV, candidate name, job title, scenario score and summary. Employer stage events are appended, with private-in-the-UI notes. Profile/job edits do not rewrite submitted records.
+Candidates write application answers directly. Legacy source notes and generated text remain distinct from approved answers in version-1 saves/imports and are preserved when a resumed draft is saved or submitted. Submission snapshots CV, candidate identity/profile, job context, scenario score, summary and any attached confirmed project card. Employer stage events are appended, with private-in-the-UI notes. Profile/job edits do not rewrite submitted records.
 
 Storage uses one versioned localStorage key. Import validates schema/version, unique IDs, cross-references and stage history before replacing state. Unreadable/incompatible saves are protected against automatic overwrite; settings can download the original raw save, import a valid file or explicitly reset. Failed/quota-limited persistence leaves the in-memory app usable and offers export. Import/export is capped at 2 MB; no binary CV storage.
 
@@ -14,7 +14,7 @@ Storage uses one versioned localStorage key. Import validates schema/version, un
 
 src/features/prototype owns model/storage/state and page compositions. src/features/jobs retains reusable presentation/filter/description logic; src/components/ui owns Base UI controls. Keep changes small.
 
-LocalStorage is origin-specific. Reload preserves state; another browser/device/port starts separately. No cross-tab live synchronization is provided; close other tabs before editing/importing. Hash links reference records in the receiving browser, not transferred records.
+LocalStorage is origin-specific. Reload preserves state; another browser/device/port starts separately. Tabs on the same origin synchronize on storage events and focus. Before a domain action, the controller checks storage again; if it discovers an unseen update, it loads that state and asks the user to review the current view before retrying. A valid external update is not written back. An unreadable external save or a conflict with unsaved in-memory changes blocks automatic persistence and preserves recovery/export options. Explicit import/reset still replaces the scenario. Use one editing tab at a time: these checks do not provide atomic concurrent writes. Hash links reference records in the receiving browser, not transferred records.
 
 ## Evidence and distribution
 

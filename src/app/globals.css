@@ -7,6 +7,8 @@
 @import "./marketplace.css";
 @import "./records.css";
 @import "./application.css";
+@import "./project-card.css";
+@import "./recruiter.css";
 @import "./interactions.css";
 
 @theme inline {

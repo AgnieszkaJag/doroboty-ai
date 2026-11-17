@@ -4,6 +4,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApplicationRecord } from "./application-record";
 import { nextStages, stageLabels, type Application } from "./model";
 import { usePrototype } from "./store";
+import { useSearchParams } from "react-router";
+import { assessApplication, rubricFor, recruiterListPath } from "./recruiter-assessment";
+import { RecruiterAssessmentView } from "./recruiter-assessment-view";
 
 export function RecruitingApplication({ application }: { application: Application }) {
   const { state, run } = usePrototype();
@@ -13,6 +16,17 @@ export function RecruitingApplication({ application }: { application: Applicatio
   const pendingFocus = useRef(false);
   const company = state.companies.find((item) => item.id === application.companyId);
   const availableStages = nextStages[application.stage];
+  const [params, setParams] = useSearchParams();
+  const rubric = rubricFor(state, application.jobId);
+  const assessment = assessApplication(application, rubric);
+  const allowed = [
+    "profile",
+    "analysis",
+    "answer",
+    "cv",
+    ...(application.projectCard ? ["project"] : []),
+  ];
+  const section = allowed.includes(params.get("sekcja") ?? "") ? params.get("sekcja")! : "profile";
 
   useLayoutEffect(() => {
     if (pendingFocus.current) {
@@ -27,6 +41,32 @@ export function RecruitingApplication({ application }: { application: Applicatio
         application={application}
         companyName={company?.name ?? ""}
         audience="employer"
+        roleContext={state.jobs.find((item) => item.id === application.jobId)}
+        roleRubric={rubric}
+        employerAnalysis={<RecruiterAssessmentView application={application} rubric={rubric} />}
+        assessmentMeta={
+          assessment ? (
+            <>
+              <span>Całość: {assessment.overall.percent}%</span>
+              <span>
+                Projekt: {assessment.project ? `${assessment.project.percent}%` : "brak karty"}
+              </span>
+            </>
+          ) : (
+            <span>Oceny: brak zatwierdzonych kryteriów</span>
+          )
+        }
+        assessmentSummary={
+          assessment?.summary ?? "Zatwierdź kryteria roli, aby porównać dostarczone materiały."
+        }
+        backTo={recruiterListPath(params)}
+        activeSection={section}
+        onSectionChange={(value) => {
+          const next = new URLSearchParams(params);
+          if (value === "profile") next.delete("sekcja");
+          else next.set("sekcja", value);
+          setParams(next, { replace: true });
+        }}
         history={application.events}
         statusRef={statusRef}
         footer={

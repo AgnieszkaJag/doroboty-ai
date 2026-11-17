@@ -1,7 +1,16 @@
 import { z } from "zod";
+import {
+  projectCardSchema,
+  projectInputSchema,
+  projectComplete,
+  projectSource,
+  analyzeProject,
+  type ProjectInput,
+} from "./project-card-model";
 import marketplace from "./data/marketplace.json" with { type: "json" };
 import people from "./data/people.json" with { type: "json" };
 import type { JobWithCompany } from "@/features/jobs/types";
+import { roleRubricSchema, rubricCriteriaSchema } from "./recruiter-assessment";
 
 const id = z
   .string()
@@ -110,7 +119,10 @@ const applicationSchema = z.object({
   jobId: id,
   companyId: id,
   jobTitle: shortText,
+  roleSnapshot: z.object({ title: shortText, summary: text, description: text }).optional(),
   candidateName: shortText,
+  candidateSnapshot: profileSchema.optional(),
+  projectCard: projectCardSchema.optional(),
   cv: text.min(20),
   answer: text.min(MIN_APPLICATION_ANSWER_LENGTH),
   sourceNotes: text,
@@ -129,6 +141,7 @@ const draftSchema = z.object({
   notes: text,
   generated: text,
   answer: text,
+  projectCardId: id.optional(),
 });
 export const stateSchema = z
   .object({
@@ -140,10 +153,19 @@ export const stateSchema = z
     applications: z.array(applicationSchema).max(2000),
     saved: z.array(z.object({ candidateId: id, jobId: id })).max(5000),
     drafts: z.array(draftSchema).max(1000),
+    projectCards: z.array(projectCardSchema).max(1000).default([]),
+    deletedProjectCards: z.array(projectCardSchema).max(1000).default([]),
+    roleRubrics: z.array(roleRubricSchema).max(1000).default([]),
   })
   .superRefine((s, ctx) => {
     const problem = (message: string) => ctx.addIssue({ code: "custom", message });
-    for (const list of [s.companies, s.jobs, s.people, s.applications]) {
+    for (const list of [
+      s.companies,
+      s.jobs,
+      s.people,
+      s.applications,
+      [...s.projectCards, ...s.deletedProjectCards],
+    ]) {
       if (new Set(list.map((x) => x.id)).size !== list.length) problem("Duplicate identifiers");
     }
     if (
@@ -160,6 +182,20 @@ export const stateSchema = z
       if (p.role === "employer" && (!p.companyId || !companyIds.has(p.companyId)))
         problem("Unknown employer company");
     for (const j of s.jobs) if (!companyIds.has(j.companyId)) problem("Unknown job company");
+    const rubricJobs = new Set<string>();
+    for (const rubric of s.roleRubrics) {
+      const author = s.people.find((item) => item.id === rubric.confirmedBy);
+      if (
+        rubricJobs.has(rubric.jobId) ||
+        jobs.get(rubric.jobId)?.companyId !== rubric.companyId ||
+        author?.role !== "employer" ||
+        author.companyId !== rubric.companyId
+      )
+        problem("Invalid role rubric reference");
+      rubricJobs.add(rubric.jobId);
+    }
+    for (const card of [...s.projectCards, ...s.deletedProjectCards])
+      if (!candidates.has(card.candidateId)) problem("Unknown project owner");
     const keys = new Set<string>();
     for (const a of s.applications) {
       const key = `${a.candidateId}:${a.jobId}`;
@@ -169,6 +205,13 @@ export const stateSchema = z
         keys.has(key)
       )
         problem("Invalid application reference");
+      if (
+        a.projectCard &&
+        (a.projectCard.candidateId !== a.candidateId || a.projectCard.status !== "confirmed")
+      )
+        problem("Invalid project snapshot");
+      if (a.candidateSnapshot && a.candidateSnapshot.name !== a.candidateName)
+        problem("Invalid candidate profile snapshot");
       keys.add(key);
       if (a.events[0]?.stage !== "submitted" || a.events.at(-1)?.stage !== a.stage)
         problem("Invalid application history");
@@ -199,9 +242,20 @@ export type Person = State["people"][number];
 export type Application = State["applications"][number];
 export type Action =
   | { type: "select_person"; id: string | null }
+  | { type: "project_save"; value: ProjectInput; mode: "draft" | "analyze" | "preview" }
+  | { type: "project_confirm"; id: string }
+  | { type: "project_delete"; id: string }
+  | { type: "project_restore"; id: string }
   | { type: "profile"; value: z.infer<typeof profileSchema> }
   | { type: "toggle_saved"; jobId: string }
-  | { type: "draft"; jobId: string; notes: string; generated: string; answer: string }
+  | {
+      type: "draft";
+      jobId: string;
+      notes: string;
+      generated: string;
+      answer: string;
+      projectCardId?: string;
+    }
   | {
       type: "submit";
       jobId: string;
@@ -209,11 +263,15 @@ export type Action =
       generated: string;
       answer: string;
       consent: boolean;
+      projectCardId?: string;
     }
   | { type: "stage"; applicationId: string; stage: Stage; note: string }
   | { type: "withdraw"; applicationId: string }
   | { type: "publish"; job: z.infer<typeof jobSchema> }
-  | { type: "company"; name: string; description: string };
+  | { type: "company"; name: string; description: string }
+  | RubricAction;
+// A rubric is stored only after explicit employer confirmation.
+export type RubricAction = { type: "rubric_confirm"; jobId: string; criteria: string[] };
 
 export function initialState(): State {
   const state = stateSchema.parse({
@@ -274,10 +332,88 @@ export function transition(
     if (person?.role !== "employer") return fail("Wybierz profil pracodawcy.");
     return person;
   };
-  if (action.type === "select_person") {
+  if (action.type === "rubric_confirm") {
+    const p = employer();
+    const job = s.jobs.find((item) => item.id === action.jobId && item.companyId === p.companyId);
+    if (!job) fail("Oferta nie jest dostępna dla tej firmy.");
+    const criteria = rubricCriteriaSchema.parse(action.criteria);
+    const previous = s.roleRubrics.find((item) => item.jobId === action.jobId);
+    const rubric = roleRubricSchema.parse({
+      jobId: job!.id,
+      companyId: job!.companyId,
+      version: (previous?.version ?? 0) + 1,
+      criteria,
+      role: { title: job!.title, summary: job!.summary, description: job!.description },
+      confirmedAt: now,
+      confirmedBy: p.id,
+    });
+    s.roleRubrics = [...s.roleRubrics.filter((item) => item.jobId !== action.jobId), rubric];
+  } else if (action.type === "select_person") {
     if (action.id !== null && !s.people.some((x) => x.id === action.id))
       fail("Nie znaleziono osoby.");
     s.activePersonId = action.id;
+  } else if (action.type === "project_save") {
+    const p = candidate();
+    const value = projectInputSchema.parse(action.value);
+    const existing = s.projectCards.find((card) => card.id === value.id);
+    if (s.deletedProjectCards.some((card) => card.id === value.id))
+      fail("Projekt został usunięty. Przywróć go z profilu przed edycją.");
+    if (existing && existing.candidateId !== p.id) fail("Ta karta należy do innej osoby.");
+    // Preserve legacy prompt identities while allowing their existing answers to be edited.
+    const issued = existing?.followUps ?? [];
+    if (
+      value.followUps.length !== issued.length ||
+      value.followUps.some(
+        (item, index) =>
+          item.area !== issued[index]?.area || item.question !== issued[index]?.question,
+      )
+    )
+      fail("Nie można zmienić pytań asystenta.");
+    const unchanged = existing && projectSource(value) === projectSource(existing);
+    const card = projectCardSchema.parse({
+      ...value,
+      candidateId: p.id,
+      updatedAt: now,
+      status: unchanged && value.workflow === "preview" ? existing.status : "draft",
+      followUpsAsked: existing?.followUpsAsked ?? false,
+      analysis: unchanged ? existing.analysis : undefined,
+      // Confirmed cards stay in preview until an explicit edit action.
+      workflow: value.workflow === "followups" ? "edit" : value.workflow,
+    });
+    if (action.mode !== "draft") {
+      if (!projectComplete(value)) fail("Uzupełnij nazwę projektu i odpowiedzi na trzy pytania.");
+      card.analysis = analyzeProject(card, card.followUps);
+      card.status = "draft";
+      card.workflow = "preview";
+    }
+    if (existing) s.projectCards[s.projectCards.indexOf(existing)] = card;
+    else s.projectCards.unshift(card);
+  } else if (action.type === "project_confirm") {
+    const p = candidate();
+    const card = s.projectCards.find((item) => item.id === action.id && item.candidateId === p.id);
+    if (!card || !card.analysis || card.workflow !== "preview" || !projectComplete(card))
+      fail("Sprawdź aktualny opis i otwórz podgląd przed potwierdzeniem.");
+    card!.status = "confirmed";
+    card!.updatedAt = now;
+  } else if (action.type === "project_delete") {
+    const p = candidate();
+    const index = s.projectCards.findIndex(
+      (card) => card.id === action.id && card.candidateId === p.id,
+    );
+    if (index < 0) fail("Nie znaleziono Twojego projektu.");
+    const [card] = s.projectCards.splice(index, 1);
+    s.deletedProjectCards.unshift(card);
+    for (const draft of s.drafts)
+      if (draft.candidateId === p.id && draft.projectCardId === action.id)
+        delete draft.projectCardId;
+  } else if (action.type === "project_restore") {
+    const p = candidate();
+    const index = s.deletedProjectCards.findIndex(
+      (card) => card.id === action.id && card.candidateId === p.id,
+    );
+    if (index < 0) fail("Nie znaleziono Twojego usuniętego projektu.");
+    const [card] = s.deletedProjectCards.splice(index, 1);
+    s.projectCards.unshift(card);
   } else if (action.type === "profile")
     Object.assign(candidate(), profileSchema.parse(action.value));
   else if (action.type === "toggle_saved") {
@@ -298,6 +434,16 @@ export function transition(
     if (!action.consent) fail("Zatwierdź treść i zgodę na przesłanie aplikacji.");
     if (s.applications.some((x) => x.candidateId === p.id && x.jobId === job.id))
       fail("Aplikacja na tę ofertę została już wysłana.");
+    const projectCard = action.projectCardId
+      ? s.projectCards.find(
+          (card) =>
+            card.id === action.projectCardId &&
+            card.candidateId === p.id &&
+            card.status === "confirmed",
+        )
+      : undefined;
+    if (action.projectCardId && !projectCard)
+      fail("Wybierz potwierdzoną kartę ze swojego profilu.");
     s.applications.push(
       applicationSchema.parse({
         id: newId,
@@ -305,7 +451,10 @@ export function transition(
         jobId: job.id,
         companyId: job.companyId,
         jobTitle: job.title,
+        roleSnapshot: { title: job.title, summary: job.summary, description: job.description },
         candidateName: p.name,
+        candidateSnapshot: profileSchema.parse(p),
+        projectCard,
         cv: p.cv,
         answer: action.answer,
         sourceNotes: action.notes,

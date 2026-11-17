@@ -999,6 +999,9 @@ code {
   gap: var(--gui-space-m);
   max-width: 850px;
 }
+.profile-form {
+  max-width: none;
+}
 .prototype-form > [data-slot="button"] {
   justify-self: start;
 }

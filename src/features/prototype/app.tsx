@@ -17,6 +17,7 @@ import {
 import { EmployerJobs, EmployerJobEditor, CompanyEditor } from "./employer";
 import { SettingsPage, PrivacyPage } from "./settings";
 import { CasePage } from "./case";
+import { ProjectCardPage } from "./project-card";
 function AppRoutes() {
   return (
     <Routes>
@@ -50,6 +51,14 @@ function AppRoutes() {
           element={
             <RequireRole role="candidate">
               <ProfilePage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="app/profil/projekty/:id"
+          element={
+            <RequireRole role="candidate">
+              <ProjectCardPage />
             </RequireRole>
           }
         />

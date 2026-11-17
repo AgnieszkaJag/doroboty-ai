@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router";
-import { CheckCircle2, FileText } from "lucide-react";
+import { CheckCircle2, FileText, Unlink } from "lucide-react";
 import { ConfettiBurst, type ConfettiOrigin } from "@/components/confetti-burst";
 import { BackLink } from "@/components/back-link";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -16,6 +16,9 @@ import { CvAttachment } from "./cv-attachment";
 import { MatchScore } from "./match-score";
 import { RecruitingApplication } from "./recruiting-application";
 import { CandidateApplication } from "./candidate-application";
+import { ProjectsSection, projectPath } from "./project-card";
+import { newProjectInput } from "./project-card-model";
+import { RecruiterCandidates } from "./recruiter-candidates";
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -180,7 +183,7 @@ export function ProfilePage({ preview = false }: { preview?: boolean }) {
           <p>{person.bio}</p>
         </div>
       ) : (
-        <form onSubmit={save} className="prototype-panel prototype-form">
+        <form onSubmit={save} className="prototype-panel prototype-form profile-form">
           <Field label="Imię i nazwisko">
             <Input name="name" required maxLength={200} defaultValue={person.name} />
           </Field>
@@ -204,6 +207,7 @@ export function ProfilePage({ preview = false }: { preview?: boolean }) {
         </h2>
         <CvAttachment candidateId={person.id} fallbackText={person.cv} />
       </section>
+      <ProjectsSection preview={preview} />
     </>
   );
 }
@@ -239,8 +243,21 @@ export function ApplyPage() {
   const notes = draft?.notes ?? "";
   const generated = draft?.generated ?? "";
   const [answer, setAnswer] = useState(draft?.answer ?? "");
+  const [projectParams, setProjectParams] = useSearchParams();
+  const [projectCardId, setProjectCardId] = useState(
+    projectParams.get("projekt") ?? draft?.projectCardId ?? "",
+  );
+  const projectCards = state.projectCards.filter(
+    (card) => card.candidateId === person.id && card.status === "confirmed",
+  );
+  const projectDrafts = state.projectCards.filter(
+    (card) => card.candidateId === person.id && card.status === "draft",
+  );
+  const selectedProject = projectCards.find((card) => card.id === projectCardId);
+  const projectInvalid = !!projectCardId && !selectedProject;
   const [consent, setConsent] = useState(false);
   const [message, setMessage] = useState("");
+  const [projectMessage, setProjectMessage] = useState("");
   const [attempted, setAttempted] = useState(false);
   const answerInput = useRef<HTMLTextAreaElement>(null);
   const sendButton = useRef<HTMLButtonElement>(null);
@@ -269,6 +286,33 @@ export function ApplyPage() {
         </Link>
       </section>
     );
+  function selectProject(nextId: string) {
+    if (
+      !run({
+        type: "draft",
+        jobId: job!.id,
+        notes,
+        generated,
+        answer,
+        projectCardId: nextId || undefined,
+      })
+    )
+      return false;
+    setProjectCardId(nextId);
+    setConsent(false);
+    setProjectParams(
+      (previous) => {
+        if (nextId) previous.set("projekt", nextId);
+        else previous.delete("projekt");
+        return previous;
+      },
+      { replace: true },
+    );
+    setProjectMessage(
+      nextId ? "" : "Usunięto kartę z tej aplikacji. Projekt pozostaje na Twoim profilu.",
+    );
+    return true;
+  }
   function submit(e: FormEvent) {
     e.preventDefault();
     if (submittedOnce.current) return;
@@ -277,11 +321,25 @@ export function ApplyPage() {
       answerInput.current?.focus();
       return;
     }
+    if (projectInvalid) {
+      document.getElementById("application-project-title")?.focus();
+      return;
+    }
     if (!consent) {
       document.getElementById("application-consent")?.focus();
       return;
     }
-    if (run({ type: "submit", jobId: job!.id, notes, generated, answer, consent })) {
+    if (
+      run({
+        type: "submit",
+        jobId: job!.id,
+        notes,
+        generated,
+        answer,
+        consent,
+        projectCardId: projectCardId || undefined,
+      })
+    ) {
       submittedOnce.current = true;
       setSubmitted(true);
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -321,6 +379,134 @@ export function ApplyPage() {
               layout="row"
               contextLabel="CV z Twojego profilu"
             />
+          </section>
+          <section
+            className="application-form-section project-attachment-section"
+            aria-labelledby="application-project-title"
+          >
+            <h3 id="application-project-title" tabIndex={-1}>
+              Karta Projektu <span className="project-help">· opcjonalnie</span>
+            </h3>
+            <p className="project-help">
+              Dołącz opis własnej pracy zapisany na profilu. Możesz wykorzystać tę samą kartę w
+              kolejnych aplikacjach.
+            </p>
+            {projectCards.map((card) => (
+              <label className="project-attachment-option" key={card.id}>
+                <Checkbox
+                  disabled={submitted}
+                  checked={projectCardId === card.id}
+                  aria-label={`Dołącz kartę: ${card.title}`}
+                  onCheckedChange={(checked) => selectProject(checked ? card.id : "")}
+                />
+                <span>
+                  <strong>{card.title}</strong>
+                  <span className="project-help">Potwierdzona karta z Twojego profilu</span>
+                </span>
+              </label>
+            ))}
+            {projectInvalid && (
+              <p role="alert" className="project-field-error">
+                Wybrana karta nie jest dostępna lub wymaga ponownego potwierdzenia. Wybierz inną
+                kartę albo aplikuj bez niej.
+              </p>
+            )}
+            {(selectedProject || projectInvalid) && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitted}
+                onClick={() => {
+                  if (selectProject(""))
+                    document.getElementById("application-project-title")?.focus();
+                }}
+              >
+                <Unlink aria-hidden="true" /> Usuń kartę z aplikacji
+              </Button>
+            )}
+            <p className={projectMessage ? "project-help" : "sr-only"} role="status">
+              {projectMessage}
+            </p>
+            {selectedProject && (
+              <Link
+                to={`${projectPath(selectedProject.id)}?oferta=${job.slug}`}
+                onClick={() =>
+                  run({
+                    type: "draft",
+                    jobId: job.id,
+                    notes,
+                    generated,
+                    answer,
+                    projectCardId: projectCardId || undefined,
+                  })
+                }
+              >
+                Zobacz lub popraw wybraną kartę
+              </Link>
+            )}
+            {!projectCards.length && (
+              <p className="project-help">
+                {projectDrafts.length
+                  ? "Masz zapisany szkic projektu. Dokończ go i potwierdź, aby dołączyć do tej aplikacji."
+                  : "Nie masz jeszcze potwierdzonej karty. Możesz ją teraz utworzyć albo aplikować bez niej."}
+              </p>
+            )}
+            {projectDrafts.length > 0 && (
+              <div className="project-application-drafts">
+                <h4>Szkice na Twoim profilu</h4>
+                {projectDrafts.map((card) => (
+                  <div className="project-application-draft" key={card.id}>
+                    <strong>{card.title.trim() || "Projekt bez nazwy"}</strong>
+                    <Button
+                      type="button"
+                      className="project-attach-action"
+                      disabled={submitted}
+                      aria-label={`Dokończ i dołącz: ${card.title.trim() || "Projekt bez nazwy"}`}
+                      onClick={() => {
+                        if (
+                          run({
+                            type: "draft",
+                            jobId: job.id,
+                            notes,
+                            generated,
+                            answer,
+                            projectCardId: card.id,
+                          })
+                        )
+                          navigate(`${projectPath(card.id)}?oferta=${job.slug}`);
+                      }}
+                    >
+                      Dokończ i dołącz
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div>
+              <Button
+                variant="outline"
+                disabled={submitted}
+                type="button"
+                onClick={() => {
+                  if (
+                    !run({
+                      type: "draft",
+                      jobId: job.id,
+                      notes,
+                      generated,
+                      answer,
+                      projectCardId: projectCardId || undefined,
+                    })
+                  )
+                    return;
+                  const value = newProjectInput(crypto.randomUUID());
+                  if (run({ type: "project_save", value, mode: "draft" }))
+                    navigate(`${projectPath(value.id)}?oferta=${job.slug}`);
+                }}
+              >
+                Dodaj nowy projekt
+              </Button>
+            </div>
           </section>
           <section
             className="application-form-section application-answer"
@@ -364,7 +550,8 @@ export function ApplyPage() {
                 aria-label="Zatwierdzam treść i przesłanie aplikacji"
               />
               <span>
-                Zatwierdzam treść aplikacji i przesłanie profilu oraz przykładowego CV pracodawcy.
+                Zatwierdzam treść aplikacji i przesłanie profilu, przykładowego CV
+                {selectedProject ? " oraz wybranej Karty Projektu" : ""} pracodawcy.
               </span>
             </label>
             {consentInvalid && (
@@ -387,7 +574,16 @@ export function ApplyPage() {
                 disabled={submitted}
                 variant="outline"
                 onClick={() => {
-                  if (run({ type: "draft", jobId: job.id, notes, generated, answer }))
+                  if (
+                    run({
+                      type: "draft",
+                      jobId: job.id,
+                      notes,
+                      generated,
+                      answer,
+                      projectCardId: projectCardId || undefined,
+                    })
+                  )
                     setMessage("Szkic został zapisany.");
                 }}
               >
@@ -411,26 +607,29 @@ export function ApplyPage() {
   );
 }
 export function ApplicationsPage({ employer = false }: { employer?: boolean }) {
+  return employer ? <RecruiterCandidates /> : <CandidateApplicationsPage />;
+}
+function CandidateApplicationsPage() {
   const { state } = usePrototype();
   const person = currentPerson(state)!;
   const [query, setQuery] = useState("");
   const [params] = useSearchParams();
   const applications = state.applications.filter(
     (x) =>
-      (employer ? x.companyId === person.companyId : x.candidateId === person.id) &&
+      x.candidateId === person.id &&
       `${x.candidateName} ${x.jobTitle}`
         .toLocaleLowerCase("pl")
         .includes(query.toLocaleLowerCase("pl")),
   );
   return (
     <>
-      <PageTitle>{employer ? "Kandydaci" : "Moje aplikacje"}</PageTitle>
+      <PageTitle>Moje aplikacje</PageTitle>
       {params.has("wyslano") && (
         <Notice>
           <CheckCircle2 className="inline size-5" /> Aplikacja została wysłana.
         </Notice>
       )}
-      <Field label={employer ? "Szukaj kandydata lub oferty" : "Szukaj oferty"}>
+      <Field label="Szukaj oferty">
         <Input value={query} onChange={(e) => setQuery(e.target.value)} />
       </Field>
       <div className="mt-6 space-y-4">
@@ -441,20 +640,17 @@ export function ApplicationsPage({ employer = false }: { employer?: boolean }) {
                 <div>
                   <Link
                     className="text-xl font-semibold text-[var(--gui-link)]"
-                    to={`${employer ? "/app/kandydaci" : "/app/aplikacje"}/${a.id}`}
+                    to={`/app/aplikacje/${a.id}`}
                   >
-                    {employer ? a.candidateName : a.jobTitle}
+                    {a.jobTitle}
                   </Link>
                   <p className="my-3 text-muted-foreground">
-                    {employer
-                      ? a.jobTitle
-                      : state.companies.find((x) => x.id === a.companyId)?.name}
+                    {state.companies.find((x) => x.id === a.companyId)?.name}
                   </p>
                   <p>{stageLabels[a.stage]}</p>
                 </div>
                 <MatchScore score={a.score} />
               </div>
-              {employer && <p className="mt-4 text-muted-foreground">{a.summary}</p>}
             </article>
           ))
         ) : (

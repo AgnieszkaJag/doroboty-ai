@@ -14,7 +14,7 @@ Open http://127.0.0.1:3001. If Node or registry access is blocked by your organi
 ## Try a complete flow
 
 1. Choose Anna Kowalska and browse offers.
-2. Save an offer, edit the profile and submit an approved application. Source notes and the editable proposal are separate.
+2. Save an offer, edit the profile, write your application answer and approve it before submitting. A confirmed project card can optionally be attached.
 3. Choose Karolina Wiśniewska for BrightLabs and review its candidates.
 4. Record review, invitation, conversation and the next decision.
 5. Return to Anna and inspect the application history.
@@ -23,7 +23,9 @@ Karolina and Tomasz see their respective companies in the interface; this is rol
 
 ## Save, share and recover
 
-Changes survive reload in this browser. Settings can export a JSON file, import a scenario or reset to fixtures. Import/reset asks before replacing state. If a save is incompatible, download the original before resetting. Storage failure is shown explicitly; export before closing the tab. Use one editing tab at a time.
+Changes survive reload in this browser. Settings can export a JSON file, import a scenario or reset to fixtures. Import/reset asks before replacing state. If a save is incompatible, download the original before resetting. Storage failure is shown explicitly; export before closing the tab.
+
+Tabs opened at the same address and port synchronize saved scenario changes. If an action discovers a change from another tab, review the updated view before retrying. If this tab has unsaved changes and another tab changes the saved scenario, saving pauses; export your unsaved copy before deciding which scenario to keep. An unreadable external save is also protected from automatic overwrite. Use one editing tab at a time because simultaneous writes are not guaranteed to be atomic. Explicit import/reset replaces the shared scenario and updates the other tabs, so close them before importing or resetting.
 
 A URL shares the interface, not your local changes. To transfer a scenario, share the exported file and import it in the other browser. Exports include all personas, applications and notes; never enter real personal data.
 
