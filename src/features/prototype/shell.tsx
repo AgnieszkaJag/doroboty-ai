@@ -232,13 +232,13 @@ export function Shell() {
                     {person.role === "candidate" && (
                       <>
                         <Link
-                          className="hidden text-sm font-medium text-muted-foreground md:inline"
+                          className="hidden text-sm font-medium text-muted-foreground lg:inline"
                           to="/app/aplikacje"
                         >
                           Aplikacje
                         </Link>
                         <Link
-                          className="hidden text-sm font-medium text-muted-foreground md:inline"
+                          className="hidden text-sm font-medium text-muted-foreground lg:inline"
                           to="/app/profil"
                         >
                           Profil
@@ -257,7 +257,7 @@ export function Shell() {
                     <Link
                       className={cn(
                         buttonVariants({ variant: "ghost", size: "icon" }),
-                        "hidden md:inline-flex",
+                        "hidden lg:inline-flex",
                       )}
                       to="/auth/sign-in"
                       aria-label="Zmień osobę"

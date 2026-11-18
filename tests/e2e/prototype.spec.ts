@@ -559,8 +559,12 @@ test("restored company and public navigation keep their structure across screen 
     "https://example.com/brightlabs",
   );
   await page.screenshot({ path: "artifacts/original-company-layout-desktop.png", fullPage: true });
-  for (const width of [320, 640, 768, 1024]) {
+  for (const width of [320, 390, 640, 767, 768, 850, 1023, 1024]) {
     await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    });
     const nav = await page.getByRole("navigation", { name: "Główna nawigacja" }).boundingBox();
     expect(nav!.x + nav!.width).toBeLessThanOrEqual(width);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -850,10 +854,18 @@ test("process sheet renders custom snapshots and long content on narrow screens"
   await page.reload();
   await choose(page, "Karolina Wiśniewska");
   await page.goto("/#/app/kandydaci/application-example");
-  await expect(page.getByText("Zapisana treść CV", { exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole("tabpanel", { name: "Profil", exact: true })
+      .getByText("Zapisana treść CV", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole("link", { name: "Pobierz CV (PDF)", exact: true })).toHaveCount(0);
   await page.getByRole("tab", { name: "CV", exact: true }).click();
-  await expect(page.getByText("Zapisana treść CV", { exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole("tabpanel", { name: "CV", exact: true })
+      .getByText("Zapisana treść CV", { exact: true }),
+  ).toBeVisible();
   await expect(page.locator("iframe[title='Podgląd CV (PDF)']")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Pobierz CV (PDF)", exact: true })).toHaveCount(0);
   await expect(page.getByRole("tabpanel", { name: "CV", exact: true })).toContainText(record.cv);
