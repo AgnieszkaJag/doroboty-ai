@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router";
-import { captureSafePageview } from "@/lib/posthog";
+import { captureSafeEvent, captureSafePageview } from "@/lib/posthog";
 import { PrototypeProvider } from "./store";
 import { Shell, NotFound } from "./shell";
 import HomePage from "./home";
@@ -20,6 +20,8 @@ import { EmployerJobs, EmployerJobEditor, CompanyEditor } from "./employer";
 import { SettingsPage, PrivacyPage } from "./settings";
 import { CasePage } from "./case";
 import { ProjectCardPage } from "./project-card";
+import { TestGuidePage } from "./test-guide";
+import { AppErrorBoundary } from "./error-boundary";
 
 function PostHogPageviews() {
   const { pathname } = useLocation();
@@ -27,6 +29,22 @@ function PostHogPageviews() {
   useEffect(() => {
     captureSafePageview(pathname);
   }, [pathname]);
+  useEffect(() => {
+    const reported = new Set<string>();
+    const report = (code: "uncaught" | "unhandled_rejection") => {
+      if (reported.has(code)) return;
+      reported.add(code);
+      captureSafeEvent("prototype_error", code);
+    };
+    const onError = () => report("uncaught");
+    const onRejection = () => report("unhandled_rejection");
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
 
   return null;
 }
@@ -41,6 +59,7 @@ function AppRoutes() {
         <Route path="firmy/:slug" element={<CompanyPage />} />
         <Route path="metodologia" element={<MethodologyPage />} />
         <Route path="polityka-prywatnosci" element={<PrivacyPage />} />
+        <Route path="testy" element={<TestGuidePage />} />
         <Route path="auth/:mode" element={<PersonPicker />} />
         <Route
           path="aplikuj/:slug"
@@ -172,10 +191,12 @@ function AppRoutes() {
 export function App() {
   return (
     <PrototypeProvider>
-      <HashRouter>
-        <PostHogPageviews />
-        <AppRoutes />
-      </HashRouter>
+      <AppErrorBoundary>
+        <HashRouter>
+          <PostHogPageviews />
+          <AppRoutes />
+        </HashRouter>
+      </AppErrorBoundary>
     </PrototypeProvider>
   );
 }

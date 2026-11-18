@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { initialState, transition } from "./model";
 import { createScenarioStore } from "./scenario-store";
 import { parseState, serializeState, STORAGE_KEY, type StoragePort } from "./storage";
+import { captureSafeEvent } from "@/lib/posthog";
+vi.mock("@/lib/posthog", () => ({ captureSafeEvent: vi.fn() }));
 
 function memory() {
   const initial = transition(initialState(), { type: "select_person", id: "employer-brightlabs" });
@@ -154,5 +156,47 @@ describe("scenario synchronization between open tabs", () => {
     expect(second.sync()).toBe(true);
     expect(second.getSnapshot().state).toEqual(initialState());
     expect(parseState(disk.storage.getItem(STORAGE_KEY)!)).toEqual(initialState());
+  });
+});
+
+describe("persisted submission and failure evidence", () => {
+  it("records a successful submission only after it has been saved", () => {
+    vi.mocked(captureSafeEvent).mockClear();
+    const disk = memory();
+    const store = createScenarioStore(() => disk.storage);
+    submitAnna(store);
+    expect(captureSafeEvent).toHaveBeenCalledWith("application_submitted");
+    expect(
+      vi.mocked(captureSafeEvent).mock.calls.filter(([name]) => name === "application_submitted"),
+    ).toHaveLength(1);
+    expect(store.getSnapshot().unsaved).toBe(false);
+  });
+  it("retains the draft and rejects submission when storage fails, without a success event", () => {
+    vi.mocked(captureSafeEvent).mockClear();
+    const disk = memory();
+    const store = createScenarioStore(() => disk.storage);
+    store.run({ type: "select_person", id: "candidate-anna" });
+    const draft = {
+      type: "draft" as const,
+      jobId: store.getSnapshot().state.jobs[0].id,
+      answer: "Syntetyczna odpowiedź na ofertę pracy.",
+      notes: "",
+      generated: "",
+    };
+    store.run(draft);
+    const before = disk.raw();
+    disk.failWrites();
+    store.run({ ...draft, answer: "Najnowsza syntetyczna odpowiedź do zachowania w pamięci." });
+    expect(store.getSnapshot().unsaved).toBe(true);
+    expect(store.run({ ...draft, type: "submit", consent: true })).toBe(false);
+    expect(disk.raw()).toBe(before);
+    expect(store.getSnapshot().state.drafts[0].answer).toContain("Najnowsza");
+    expect(store.getSnapshot().state.applications).toHaveLength(1);
+    expect(store.getSnapshot().error).toContain("Nie zapisano aplikacji");
+    expect(captureSafeEvent).toHaveBeenCalledWith("prototype_error", "storage_write");
+    expect(captureSafeEvent).not.toHaveBeenCalledWith("application_submitted");
+    expect(
+      vi.mocked(captureSafeEvent).mock.calls.filter(([, code]) => code === "storage_write"),
+    ).toHaveLength(1);
   });
 });

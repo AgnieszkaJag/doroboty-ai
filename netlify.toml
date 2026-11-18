@@ -1,0 +1,14 @@
+[build]
+  command = "npm exec playwright install chromium && npm run check:release"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+  CI = "true"
+  PLAYWRIGHT_BROWSERS_PATH = "0"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

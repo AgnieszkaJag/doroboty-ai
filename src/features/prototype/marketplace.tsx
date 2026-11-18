@@ -26,6 +26,7 @@ import { usePrototype } from "./store";
 import { currentPerson, publishedJobs } from "./model";
 import { NotFound } from "./shell";
 import { cn } from "@/lib/utils";
+import { captureSafeEvent } from "@/lib/posthog";
 
 function LocalMap({ jobs }: { jobs: JobWithCompany[] }) {
   const [selected, setSelected] = useState<string | null>(null);
@@ -422,6 +423,9 @@ export function JobPage() {
                   <Link
                     className={buttonVariants()}
                     to={submitted ? `/app/aplikacje/${submitted.id}` : `/aplikuj/${job.slug}`}
+                    onClick={() => {
+                      if (!submitted) captureSafeEvent("application_start_clicked");
+                    }}
                   >
                     {submitted ? "Zobacz swoją aplikację" : "Aplikuj"}
                     <ArrowRight />
@@ -440,6 +444,7 @@ export function JobPage() {
                 <Link
                   className={buttonVariants()}
                   to={`/auth/sign-in?audience=candidate&next=${encodeURIComponent(`/aplikuj/${job.slug}`)}`}
+                  onClick={() => captureSafeEvent("application_start_clicked")}
                 >
                   Wybierz osobę i aplikuj
                 </Link>
@@ -506,6 +511,7 @@ export function JobPage() {
 export function CompanyPage() {
   const { slug } = useParams();
   const { state } = usePrototype();
+  const person = currentPerson(state);
   const company = state.companies.find((x) => x.slug === slug);
   if (!company) return <NotFound />;
   const jobs = publishedJobs(state).filter((x) => x.companyId === company.id);
@@ -522,21 +528,23 @@ export function CompanyPage() {
             {company.description}
           </p>
         </div>
-        <dl className="h-fit rounded-xl bg-muted/35 p-6 text-sm">
-          <div className="flex gap-2">
-            <MapPin className="size-5" />
+        <aside className="prototype-panel h-fit text-sm" aria-label="Informacje o firmie">
+          <dl className="space-y-5">
             <div>
-              <dt className="font-medium">Lokalizacja</dt>
-              <dd className="mt-1 text-muted-foreground">{company.location}</dd>
+              <dt className="flex gap-2 font-medium">
+                <MapPin className="size-5" aria-hidden="true" />
+                Lokalizacja
+              </dt>
+              <dd className="mt-1 pl-7 text-muted-foreground">{company.location}</dd>
             </div>
-          </div>
-          <div className="mt-5 flex gap-2">
-            <Users className="size-5" />
             <div>
-              <dt className="font-medium">Wielkość</dt>
-              <dd className="mt-1 text-muted-foreground">{company.sizeLabel}</dd>
+              <dt className="flex gap-2 font-medium">
+                <Users className="size-5" aria-hidden="true" />
+                Wielkość
+              </dt>
+              <dd className="mt-1 pl-7 text-muted-foreground">{company.sizeLabel}</dd>
             </div>
-          </div>
+          </dl>
           {/^https?:\/\//i.test(company.websiteUrl) && (
             <a
               className="mt-6 inline-flex items-center gap-2 font-medium text-[var(--gui-link)] hover:underline"
@@ -547,14 +555,27 @@ export function CompanyPage() {
               Strona firmy <ArrowUpRight className="size-4" />
             </a>
           )}
-        </dl>
+          <p className="mt-5 text-muted-foreground">
+            Przykładowa firma i oferty do testów prototypu.
+          </p>
+        </aside>
       </div>
       <section className="py-12">
         <h2 className="text-2xl font-semibold">Otwarte role</h2>
         {jobs.length > 0 ? (
           <div className="mt-7 pp-job-list">
             {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
+              <JobCard
+                key={job.id}
+                job={job}
+                saved={
+                  person?.role === "candidate"
+                    ? state.saved.some(
+                        (item) => item.candidateId === person.id && item.jobId === job.id,
+                      )
+                    : undefined
+                }
+              />
             ))}
           </div>
         ) : (

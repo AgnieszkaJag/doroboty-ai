@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router";
+import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { CheckCircle2, FileText, Unlink } from "lucide-react";
 import { captureSafeEvent } from "@/lib/posthog";
+import { internalDestination } from "@/lib/internal-destination";
+import { readResearchRun } from "@/lib/research-session";
 import { ConfettiBurst, type ConfettiOrigin } from "@/components/confetti-burst";
 import { BackLink } from "@/components/back-link";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -29,17 +31,17 @@ export function Field({ label, children }: { label: string; children: ReactNode 
     </label>
   );
 }
-export function PersonPicker() {
+export function PersonPicker({ destination }: { destination?: string } = {}) {
   const { state, run } = usePrototype();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const next = params.get("next");
+  const next = destination ?? params.get("next");
   const audience = params.get("audience");
   const people =
     audience === "candidate" || audience === "employer"
       ? state.people.filter((person) => person.role === audience)
       : state.people;
-  const safeNext = next && /^\/(?!\/)/.test(next) && !next.startsWith("/auth") ? next : null;
+  const safeNext = internalDestination(next);
   return (
     <section className="prototype-section max-w-4xl">
       <h1>Wybierz osobę</h1>
@@ -54,13 +56,13 @@ export function PersonPicker() {
             <Button
               variant="outline"
               onClick={() => {
-                run({ type: "select_person", id: person.id });
+                if (!run({ type: "select_person", id: person.id })) return;
                 navigate(
                   person.role === "candidate"
                     ? (safeNext ?? "/app")
                     : person.role === "employer"
-                      ? "/app/oferty"
-                      : "/app/case",
+                      ? (safeNext ?? "/app/oferty")
+                      : (safeNext ?? "/app/case"),
                 );
               }}
             >
@@ -80,8 +82,10 @@ export function RequireRole({
   children: ReactNode;
 }) {
   const { state } = usePrototype();
+  const location = useLocation();
   const person = currentPerson(state);
-  if (!person) return <PersonPicker />;
+  if (!person)
+    return <PersonPicker destination={`${location.pathname}${location.search}${location.hash}`} />;
   if (role && person.role !== role)
     return (
       <Empty>
@@ -90,7 +94,10 @@ export function RequireRole({
           {role === "candidate" ? "kandydata" : role === "employer" ? "pracodawcy" : "prowadzącego"}
           .
         </p>
-        <Link className={buttonVariants({ variant: "outline" })} to="/auth/sign-in">
+        <Link
+          className={buttonVariants({ variant: "outline" })}
+          to={`/auth/sign-in?audience=${role}&next=${encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)}`}
+        >
           Zmień osobę
         </Link>
       </Empty>
@@ -236,7 +243,7 @@ export function SavedPage() {
 }
 export function ApplyPage() {
   const { slug } = useParams();
-  const { state, run } = usePrototype();
+  const { state, run, unsaved } = usePrototype();
   const person = currentPerson(state)!;
   const navigate = useNavigate();
   const job = publishedJobs(state).find((x) => x.slug === slug);
@@ -526,8 +533,17 @@ export function ApplyPage() {
                 aria-describedby="application-answer-help"
                 value={answer}
                 onChange={(e) => {
-                  setAnswer(e.target.value);
+                  const nextAnswer = e.target.value;
+                  setAnswer(nextAnswer);
                   setConsent(false);
+                  run({
+                    type: "draft",
+                    jobId: job.id,
+                    notes,
+                    generated,
+                    answer: nextAnswer,
+                    projectCardId: projectCardId || undefined,
+                  });
                 }}
               />
             </Field>
@@ -539,6 +555,14 @@ export function ApplyPage() {
               {answerInvalid
                 ? `Odpowiedź jest za krótka. Wpisz co najmniej ${MIN_APPLICATION_ANSWER_LENGTH} znaków (obecnie: ${answerLength}).`
                 : `Minimum ${MIN_APPLICATION_ANSWER_LENGTH} znaków. Obecnie: ${answerLength}.`}
+            </p>
+            <p
+              className={unsaved ? "error-message" : "application-help"}
+              role={unsaved ? "alert" : undefined}
+            >
+              {unsaved
+                ? "Nie zapisano ostatnich zmian. Zostaw otwartą kartę i zachowaj kopię w ustawieniach danych."
+                : "Odpowiedź zapisuje się automatycznie jako szkic w tej przeglądarce."}
             </p>
           </section>
           <div className="application-form-section application-submit">
@@ -597,7 +621,11 @@ export function ApplyPage() {
               role="status"
               className={submitted || !message ? "sr-only" : "application-save-status"}
             >
-              {submitted ? "Wysłano aplikację. Otwieramy listę Twoich aplikacji." : message}
+              {submitted
+                ? "Wysłano aplikację. Otwieramy listę Twoich aplikacji."
+                : unsaved && message
+                  ? "Szkic jest tylko w pamięci tej karty. Zachowaj eksport w ustawieniach danych."
+                  : message}
             </p>
             <p className="application-help">
               Prototyp: aplikacja zostaje w tym przeglądarkowym scenariuszu.
@@ -630,6 +658,11 @@ function CandidateApplicationsPage() {
       {params.has("wyslano") && (
         <Notice>
           <CheckCircle2 className="inline size-5" /> Aplikacja została wysłana.
+          {readResearchRun() && (
+            <Link className="ml-2 underline" to="/testy?etap=koniec">
+              Zakończ test i przekaż opinię
+            </Link>
+          )}
         </Notice>
       )}
       <Field label="Szukaj oferty">

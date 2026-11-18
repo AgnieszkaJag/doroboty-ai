@@ -5,10 +5,11 @@ const PUBLIC_ROUTE_CATEGORIES = new Set([
   "/firmy/:slug",
   "/metodologia",
   "/polityka-prywatnosci",
+  "/testy",
 ]);
 
 export const PUBLIC_AUTOCAPTURE_URL_ALLOWLIST =
-  /^(?:https?:\/\/[^#]+#\/(?:|oferty(?:\/[^/?#]+)?|firmy\/[^/?#]+|metodologia|polityka-prywatnosci)\/?(?:\?[^#]*)?|https?:\/\/[^/?#]+\/?(?:\?[^#]*)?)$/;
+  /^(?:https?:\/\/[^#]+#\/(?:|oferty(?:\/[^/?#]+)?|firmy\/[^/?#]+|metodologia|polityka-prywatnosci|testy)\/?(?:\?[^#]*)?(?:#[^#]*)?|https?:\/\/[^/?#]+\/?(?:\?[^#]*)?)$/;
 
 export function normalizeAnalyticsPathname(pathname: string): string {
   const pathPart = pathname.split(/[?#]/, 1)[0] ?? "";
@@ -18,7 +19,8 @@ export function normalizeAnalyticsPathname(pathname: string): string {
     path === "/" ||
     path === "/oferty" ||
     path === "/metodologia" ||
-    path === "/polityka-prywatnosci"
+    path === "/polityka-prywatnosci" ||
+    path === "/testy"
   ) {
     return path;
   }

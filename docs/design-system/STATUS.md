@@ -21,17 +21,17 @@ Read the current [host catalog](HOST-COMPONENTS.md), [record APIs](RECORDS.md) a
 
 Candidate submitted detail now also uses the shared ApplicationRecord composition, with owner-filtered stage/date history, CV-only snapshot preview and focused two-step withdrawal. Repository-only execution evidence: `docs/tasks/candidate-submitted-record-redesign.md`. This does not resolve the company-page audit below.
 
-## Open company-page findings
+## Company-page findings
 
-The Northstar Health audit (`docs/tasks/northstar-company-design-audit.md`) was read-only. The following findings are **open**, not fixed by the later confetti work or this documentation update:
+The original Northstar Health audit (`docs/tasks/northstar-company-design-audit.md`) was read-only. The November 18 external-test repair addresses four findings locally; targeted company keyboard, persistence, reflow and Axe checks passed at 390/1280px. This is source/local evidence, not a new deployment or approval of the entire company layout.
 
-| ID    | Remaining issue                                                                                                 |
-| ----- | --------------------------------------------------------------------------------------------------------------- |
-| NH-01 | Invalid definition-list structure; targeted Axe scan reports serious `definition-list` and `dlitem` violations. |
-| NH-02 | Company information surface lacks the expected white fill and visible ink contour.                              |
-| NH-03 | Header identity fallback lacks a visible contour and uses the older large treatment.                            |
-| NH-04 | Company cards omit save toggles even for an active candidate because the saved state is not supplied.           |
-| NH-05 | Company/profile footer lacks the demonstrative-data context present in C08/C12.                                 |
+| ID    | Finding and current state                                                                                                                     |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| NH-01 | Fixed locally: valid grouped `dt`/`dd` pairs; the external website link is outside `dl`. Targeted Axe reports no serious/critical violations. |
+| NH-02 | Fixed locally: company facts reuse the white, outlined `prototype-panel` surface.                                                             |
+| NH-03 | Open: header identity fallback lacks a visible contour and uses the older large treatment.                                                    |
+| NH-04 | Fixed locally: active candidates can save/unsave through the shared JobCard toggle; keyboard activation and reload persistence passed.        |
+| NH-05 | Fixed locally: explicit synthetic-company/offers context appears in the company information panel.                                            |
 
 The full company-page layout is not a canonical v1 screen. Container alignment, contextual BackLink and richer empty-state recovery are documented host recommendations; do not convert them into invented source requirements. The audit does not require the compact source profile's H2 size or illustration on every full company page.
 
@@ -39,4 +39,4 @@ The full company-page layout is not a canonical v1 screen. Container alignment, 
 
 The latest completed implementation gate, including the shared candidate record, ran 27 unit tests and 34 Chromium journeys, plus formatting, source-kit integrity/six kit tests, lint, types, packet and static build. Those counts are dated execution evidence, not a permanent acceptance guarantee or a claim about future changes. The current task records its own execution separately.
 
-A green gate does not close NH-01: the existing general accessibility journeys do not scan that company-page structure. Add targeted company accessibility/save regressions when fixing it. The older audit (`docs/tasks/poster-people-design-system-audit.md`), re-audit (`docs/tasks/poster-people-design-system-reaudit.md`) and subsequent task evidence remain historical records; do not erase them or infer a new closure from a documentation edit. Ignored artifacts support local review but are not the sole portable specification.
+The new `tests/e2e/external-readiness.spec.ts` now includes the previously missing company accessibility/save regression. NH-03 remains open. The older audit (`docs/tasks/poster-people-design-system-audit.md`), re-audit (`docs/tasks/poster-people-design-system-reaudit.md`) and subsequent task evidence remain historical records; do not erase them or infer a new closure from a documentation edit. Ignored artifacts support local review but are not the sole portable specification.

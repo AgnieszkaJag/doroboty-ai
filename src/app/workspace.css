@@ -1005,6 +1005,24 @@ code {
 .prototype-form > [data-slot="button"] {
   justify-self: start;
 }
+.research-guide .prototype-form,
+.recovery-page .prototype-form {
+  grid-template-columns: minmax(0, 1fr);
+}
+.research-guide .prototype-form > *,
+.recovery-page .prototype-form > * {
+  min-width: 0;
+}
+.research-guide p,
+.recovery-page p {
+  overflow-wrap: anywhere;
+}
+.research-guide .research-action,
+.recovery-page .research-action {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .prototype-notice {
   padding: var(--gui-space-s) var(--gui-space-m);
   margin-bottom: var(--gui-space-m);

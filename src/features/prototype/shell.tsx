@@ -184,6 +184,9 @@ export function Shell() {
               <Link className="nav-link" to="/auth/sign-in">
                 Zmień osobę
               </Link>
+              <Link className="nav-link" to="/testy">
+                Test i pomoc
+              </Link>
             </nav>
           </aside>
           <div className="workspace">
@@ -298,6 +301,7 @@ export function Shell() {
                 <Link to="/oferty">Oferty</Link>
                 <Link to="/metodologia">Metodologia</Link>
                 <Link to="/polityka-prywatnosci">Prywatność</Link>
+                <Link to="/testy">Test i pomoc</Link>
                 <Link className="inline-flex items-center gap-1" to="/auth/sign-in">
                   Strefa case <ArrowUpRight className="size-4" />
                 </Link>

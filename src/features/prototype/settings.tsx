@@ -126,15 +126,33 @@ export function PrivacyPage() {
         <p>
           Profile, aplikacje, ustawienia i notatki scenariusza pozostają w pamięci tej przeglądarki.
           Aplikacja nie wysyła ich do bazy ani dostawcy AI. W buildzie produkcyjnym z ustawionym
-          tokenem projektu i hostem PostHog aplikacja wysyła odsłony i kliknięcia przycisków na
-          publicznych stron. Osobne zdarzenie rejestruje kliknięcie rozpoczęcia dodawania karty
-          projektu i przekazuje ze strony aplikacji tylko uogólnioną ścieżkę, bez danych karty,
-          oferty, profilu ani formularza. Dynamiczne slugi i parametry wyszukiwania są usuwane ze
-          ścieżek. Tekst i atrybuty elementów są maskowane; wartości pól, kopiowany tekst i nagrania
-          sesji nie są zbierane. Zdarzenia nie są łączone z kontem ani danymi profilu, a ustawienie
-          Do Not Track jest respektowane. Żądania do PostHog mogą zawierać standardowe dane
-          techniczne, w tym anonimowy identyfikator przeglądarki i adres IP. Plik eksportu zawiera
-          cały lokalny scenariusz, w tym notatki.
+          tokenem projektu i hostem PostHog aplikacja wysyła odsłony i kliknięcia przycisków oraz
+          linków na publicznych stronach, w tym kliknięcie „Aplikuj”. Wysyła też zdarzenia
+          rozpoczęcia i potwierdzenia karty projektu, zapisania próbnej aplikacji i zakończenia
+          testu. Błędy przekazują wyłącznie stałą kategorię, bez komunikatu i stosu błędu. Ścieżki
+          są uogólnione; dynamiczne identyfikatory, parametry wyszukiwania, tekst i atrybuty
+          elementów, wartości pól, kopiowany tekst oraz nagrania sesji nie są zbierane. Nie łączymy
+          zdarzeń z kontem ani danymi wybranego profilu. Respektujemy ustawienie Do Not Track.
+          Żądania mogą zawierać dane techniczne przeglądarki; dostawca otrzymuje też adres IP
+          potrzebny do połączenia.
+        </p>
+        <p>
+          Jeśli rozpoczniesz test na stronie „Test i pomoc”, losowy kod próby połączy etapy tej
+          wizyty. Kod pozostaje w karcie przeglądarki do jej zamknięcia (odświeżenie go nie usuwa).
+          Możesz przejść do prototypu bez tworzenia kodu. Pobranie podsumowania ani eksportu nie
+          wysyła pliku prowadzącemu. Eksport scenariusza zawiera wszystkie lokalne treści, w tym
+          notatki; podsumowanie próby zawiera tylko kod, daty etapów i wynik.
+        </p>
+        <p>
+          Informacje zwrotne otrzymuje osoba, która zaprosiła Cię do testu — odpowiedz na jej
+          zaproszenie. Powiązania zaproszeń, opinii i kodów prób usunie do 30 dni po ostatnim
+          teście. Zachowa jedynie anonimowe wnioski z badania.
+        </p>
+        <p>
+          Zdarzenia analityczne w PostHog mają osobny, domyślny okres przechowywania: 12 miesięcy.
+          Dostawca usuwa starsze zdarzenia według swojego harmonogramu. Dostęp do projektu ma
+          obecnie tylko właściciel badania. Reset scenariusza lub wyczyszczenie danych przeglądarki
+          nie usuwa zdarzeń z PostHog ani przesłanych opinii.
         </p>
         <p>
           Zbieranie zdarzeń jest wyłączone w trybie deweloperskim oraz wtedy, gdy brakuje

@@ -17,6 +17,7 @@ describe("PostHog route privacy", () => {
 
   it("allows autocapture on public routes only", () => {
     expect(isPublicAnalyticsPathname("/")).toBe(true);
+    expect(isPublicAnalyticsPathname("/testy?etap=koniec")).toBe(true);
     expect(isPublicAnalyticsPathname("/oferty/ai-product-manager")).toBe(true);
     expect(isPublicAnalyticsPathname("/app/profil/projekty/secret-id")).toBe(false);
     expect(isPublicAnalyticsPathname("/aplikuj/ai-product-manager")).toBe(false);
@@ -33,7 +34,19 @@ describe("PostHog route privacy", () => {
       PUBLIC_AUTOCAPTURE_URL_ALLOWLIST.test("https://example.test/#/oferty?query=hidden"),
     ).toBe(true);
     expect(PUBLIC_AUTOCAPTURE_URL_ALLOWLIST.test("https://example.test/#/metodologia")).toBe(true);
+    expect(
+      PUBLIC_AUTOCAPTURE_URL_ALLOWLIST.test("https://example.test/#/oferty/role#employer"),
+    ).toBe(true);
+    expect(
+      PUBLIC_AUTOCAPTURE_URL_ALLOWLIST.test("https://example.test/#/oferty/role?query=hidden#role"),
+    ).toBe(true);
+    expect(PUBLIC_AUTOCAPTURE_URL_ALLOWLIST.test("https://example.test/#/testy?etap=koniec")).toBe(
+      true,
+    );
     expect(PUBLIC_AUTOCAPTURE_URL_ALLOWLIST.test("https://example.test/#/app/profil")).toBe(false);
+    expect(
+      PUBLIC_AUTOCAPTURE_URL_ALLOWLIST.test("https://example.test/#/app/profil#employer"),
+    ).toBe(false);
     expect(PUBLIC_AUTOCAPTURE_URL_ALLOWLIST.test("https://example.test/#/aplikuj/role")).toBe(
       false,
     );

@@ -8,6 +8,7 @@ import {
 } from "react";
 import { STORAGE_KEY, type StoragePort } from "./storage";
 import { createScenarioStore } from "./scenario-store";
+import { captureSafeEvent } from "@/lib/posthog";
 function browserStorage(): StoragePort | null {
   try {
     return window.localStorage;
@@ -36,6 +37,18 @@ function useStore() {
       window.removeEventListener("focus", onFocus);
     };
   }, [controller]);
+  useEffect(() => {
+    if (snapshot.blocked) captureSafeEvent("prototype_error", "storage_read");
+  }, [snapshot.blocked]);
+  useEffect(() => {
+    if (!snapshot.unsaved) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [snapshot.unsaved]);
   return {
     ...snapshot,
     run: controller.run,

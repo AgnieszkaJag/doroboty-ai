@@ -25,13 +25,16 @@ No project credentials belong in Git or participant source packages. The browser
 - Netlify project `dorobotyaiaj` publishes `codex/pre-production` automatically.
 - `VITE_POSTHOG_PROJECT_TOKEN` and `VITE_POSTHOG_HOST` are configured in the Netlify Production deploy context only. Preview, branch-deploy and local contexts remain unset.
 - The host is `https://eu.i.posthog.com`, matching PostHog project 355474.
-- PostHog Autocapture is enabled for the configured public button-click scope. Session recording is disabled.
-- Live event verification remains pending until the updated source is published.
+- Production deploy `6afd3959620f2a58161e42bd` published commit `878d585`.
+- PostHog project 355474 has `autocapture_opt_out=false`; session recording remains disabled.
+- A live hourly trends query for the last 24 hours showed 12 `$pageview`, 4 `$autocapture` and 2 `project_card_add_clicked` events in the current partial UTC hour. A public offer button click produced a successful PostHog `/i/v0/e/` request (HTTP 200). Counts include the synthetic browser verification session and the current hour is incomplete.
+- The project-card action is covered by the explicit `project_card_add_clicked` event; broad Autocapture stays limited to public-route button clicks by design. The candidate project-card buttons on private app routes are excluded from `$autocapture` and emit the normalized custom event instead.
 
 ## Validation
 
 - Node.js 24.22.3: Prettier, design-system integrity (67 files and 333 references), six design-system checks, ESLint, TypeScript, 69 unit tests, participant-packet verification and Vite production build passed.
 - `./scripts/verify` could not start because `npm` is not available in this shell. The Playwright browser gate also could not start because its web server command invokes `npm run preview`.
+- Live PostHog verification observed pageviews, `$autocapture` and the explicit project-card event. A fresh public button click generated an ingestion request that returned HTTP 200, and the events appeared in the project trend query.
 
 ## Separate review
 
