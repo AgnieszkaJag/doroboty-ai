@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+import { captureSafeEvent } from "@/lib/posthog";
 import {
   ArrowRight,
   Check,
@@ -266,6 +267,7 @@ export function ProjectsSection({ preview = false }: { preview?: boolean }) {
   );
   const deletedCards = state.deletedProjectCards.filter((card) => card.candidateId === person.id);
   function create() {
+    captureSafeEvent("project_card_add_clicked");
     const value = newProjectInput(crypto.randomUUID());
     if (run({ type: "project_save", value, mode: "draft" })) navigate(projectPath(value.id));
   }

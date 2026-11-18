@@ -1,4 +1,6 @@
-import { HashRouter, Routes, Route, Navigate } from "react-router";
+import { useEffect } from "react";
+import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router";
+import { captureSafePageview } from "@/lib/posthog";
 import { PrototypeProvider } from "./store";
 import { Shell, NotFound } from "./shell";
 import HomePage from "./home";
@@ -18,6 +20,17 @@ import { EmployerJobs, EmployerJobEditor, CompanyEditor } from "./employer";
 import { SettingsPage, PrivacyPage } from "./settings";
 import { CasePage } from "./case";
 import { ProjectCardPage } from "./project-card";
+
+function PostHogPageviews() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    captureSafePageview(pathname);
+  }, [pathname]);
+
+  return null;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -160,6 +173,7 @@ export function App() {
   return (
     <PrototypeProvider>
       <HashRouter>
+        <PostHogPageviews />
         <AppRoutes />
       </HashRouter>
     </PrototypeProvider>

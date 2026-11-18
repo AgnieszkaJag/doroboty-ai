@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router";
 import { CheckCircle2, FileText, Unlink } from "lucide-react";
+import { captureSafeEvent } from "@/lib/posthog";
 import { ConfettiBurst, type ConfettiOrigin } from "@/components/confetti-burst";
 import { BackLink } from "@/components/back-link";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -489,6 +490,7 @@ export function ApplyPage() {
                 disabled={submitted}
                 type="button"
                 onClick={() => {
+                  captureSafeEvent("project_card_add_clicked");
                   if (
                     !run({
                       type: "draft",

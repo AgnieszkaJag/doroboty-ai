@@ -24,7 +24,9 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:3001. No environment file, account, database or additional service is required. Package installation requires access to the npm registry.
+Open http://127.0.0.1:3001. Local development does not need an environment file, account, database or additional service. Package installation requires access to the npm registry.
+
+Production browser analytics is optional. Set `VITE_POSTHOG_PROJECT_TOKEN` and `VITE_POSTHOG_HOST` at build time; see `.env.example` for the format. The project token is a public ingestion key, not a personal API key. PostHog stays disabled in development and when either value is missing. Never put a personal PostHog API key in frontend configuration.
 
 Select Anna or Marek as a candidate, Karolina or Tomasz as an employer, or the instructor. Publish a job, apply, switch person and record the employer decision. Changes survive reload in this browser; settings provide export, import and reset. AI and scores simulate prepared scenarios. Use example CVs only.
 

@@ -124,13 +124,22 @@ export function PrivacyPage() {
           ani poufnych informacji.
         </p>
         <p>
-          Profile, aplikacje i ustawienia pozostają w pamięci tej przeglądarki. Aplikacja nie wysyła
-          ich do bazy, dostawcy AI ani systemu analitycznego. Plik eksportu zawiera cały lokalny
-          scenariusz, w tym notatki.
+          Profile, aplikacje, ustawienia i notatki scenariusza pozostają w pamięci tej przeglądarki.
+          Aplikacja nie wysyła ich do bazy ani dostawcy AI. W buildzie produkcyjnym z ustawionym
+          tokenem projektu i hostem PostHog aplikacja wysyła odsłony i kliknięcia przycisków na
+          publicznych stron. Osobne zdarzenie rejestruje kliknięcie rozpoczęcia dodawania karty
+          projektu i przekazuje ze strony aplikacji tylko uogólnioną ścieżkę, bez danych karty,
+          oferty, profilu ani formularza. Dynamiczne slugi i parametry wyszukiwania są usuwane ze
+          ścieżek. Tekst i atrybuty elementów są maskowane; wartości pól, kopiowany tekst i nagrania
+          sesji nie są zbierane. Zdarzenia nie są łączone z kontem ani danymi profilu, a ustawienie
+          Do Not Track jest respektowane. Żądania do PostHog mogą zawierać standardowe dane
+          techniczne, w tym anonimowy identyfikator przeglądarki i adres IP. Plik eksportu zawiera
+          cały lokalny scenariusz, w tym notatki.
         </p>
         <p>
-          Możesz usunąć zmiany przyciskiem „Resetuj scenariusz” w ustawieniach lub wyczyścić dane
-          witryny w przeglądarce. Hosting może prowadzić własne logi dostępu.
+          Zbieranie zdarzeń jest wyłączone w trybie deweloperskim oraz wtedy, gdy brakuje
+          konfiguracji PostHog. Możesz usunąć zmiany przyciskiem „Resetuj scenariusz” w ustawieniach
+          lub wyczyścić dane witryny w przeglądarce. Hosting może prowadzić własne logi dostępu.
         </p>
       </div>
     </section>
