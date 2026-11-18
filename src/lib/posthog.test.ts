@@ -101,6 +101,42 @@ describe("safe browser analytics", () => {
       }),
     ).toBeNull();
   });
+  it.each(["button", "a"])(
+    "keeps only the public clicked %s tag from the SDK serialized chain",
+    async (tag) => {
+      window.location.hash = "#/oferty";
+      const { sanitizeEvent } = await import("./posthog");
+      const result = sanitizeEvent({
+        uuid: crypto.randomUUID(),
+        event: "$autocapture",
+        properties: {
+          $event_type: "click",
+          $elements_chain: `svg:nth-child="1";${tag}.private:nth-child="2"attr__title="secret;button";body`,
+        },
+      } as CaptureResult)!;
+      expect(result.properties.$elements).toEqual([{ tag_name: tag }]);
+      expect(result.properties.$elements_chain).toBeUndefined();
+      expect(JSON.stringify(result)).not.toMatch(/private|secret|svg|body/);
+    },
+  );
+  it.each([
+    'input:attr__title="private;a;button";body',
+    'input:attr__title="private\\";a;button";body',
+    "input:attr__title='private;a;button';body",
+    'button:attr__title="unterminated;body',
+    "a-custom;button-group;body",
+    null,
+  ])("rejects serialized non-interactive or malformed chains: %s", async (chain) => {
+    window.location.hash = "#/oferty";
+    const { sanitizeEvent } = await import("./posthog");
+    expect(
+      sanitizeEvent({
+        uuid: crypto.randomUUID(),
+        event: "$autocapture",
+        properties: { $event_type: "click", $elements_chain: chain },
+      } as CaptureResult),
+    ).toBeNull();
+  });
   it("does not let SDK init or capture failures escape into application work", async () => {
     sdk.capture.mockImplementation(() => {
       throw new Error("unavailable");

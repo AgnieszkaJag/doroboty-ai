@@ -37,6 +37,31 @@ function safeCurrentUrl(pathname: string): string {
   return `${window.location.origin}/#${normalizeAnalyticsPathname(pathname)}`;
 }
 
+function serializedClickTag(chain: unknown): "a" | "button" | undefined {
+  if (typeof chain !== "string") return;
+  let quote: string | undefined;
+  let escaped = false;
+  let start = 0;
+  let tag: "a" | "button" | undefined;
+  // The SDK may serialize the chain before before_send. Ignore quoted attributes,
+  // including embedded semicolons, and retain only a literal element tag.
+  for (let index = 0; index <= chain.length; index++) {
+    const char = chain[index];
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === quote) quote = undefined;
+    } else if (char === '"' || char === "'") {
+      quote = char;
+    } else if (char === ";" || index === chain.length) {
+      const match = /^(a|button)(?=[:.#\s]|$)/.exec(chain.slice(start, index))?.[1];
+      if (!tag && (match === "a" || match === "button")) tag = match;
+      start = index + 1;
+    }
+  }
+  return quote ? undefined : tag;
+}
+
 /** A strict payload allowlist also protects against remotely enabled SDK features. */
 export function sanitizeEvent(event: CaptureResult): CaptureResult | null {
   const currentPath = normalizeAnalyticsPathname(window.location.hash.slice(1));
@@ -49,7 +74,7 @@ export function sanitizeEvent(event: CaptureResult): CaptureResult | null {
     const tag = Array.isArray(elements)
       ? elements.find((element) => element?.tag_name === "a" || element?.tag_name === "button")
           ?.tag_name
-      : undefined;
+      : serializedClickTag(event.properties.$elements_chain);
     if (tag !== "a" && tag !== "button") return null;
     clickTag = tag;
   }
